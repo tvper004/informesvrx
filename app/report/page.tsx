@@ -152,18 +152,18 @@ export default function ReportPage() {
 
                 </ReportPageLayout>
 
-                {/* --- PAGE 2: Distribution Charts (Stacked) --- */}
+                {/* --- PAGE 2: Severity Distribution --- */}
                 <ReportPageLayout letterhead={letterhead}>
-                    <div className="flex flex-col gap-12 h-full justify-center">
+                    <div className="flex flex-col h-full justify-center">
                         <div className="break-inside-avoid">
                             <h3 className="text-xl font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Distribución por Severidad</h3>
-                            <p className="text-sm text-slate-500 mb-6">
+                            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
                                 Desglose de las vulnerabilidades activas actuales por nivel de severidad. Se debe poner énfasis en estandarizar los problemas de severidad Crítica y Alta.
                             </p>
-                            <div className="h-64 w-full">
+                            <div className="h-72 w-full">
                                 <DistributionChart data={severityData} colors={SEVERITY_COLORS} />
                             </div>
-                            <div className="flex flex-wrap justify-center gap-4 mt-4">
+                            <div className="flex flex-wrap justify-center gap-4 mt-8">
                                 {severityData.map((d, i) => (
                                     <div key={i} className="text-sm flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
                                         <span className="w-3 h-3 rounded-full" style={{ backgroundColor: SEVERITY_COLORS[i] }}></span>
@@ -172,20 +172,25 @@ export default function ReportPage() {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                </ReportPageLayout>
 
+                {/* --- PAGE 3: OS Distribution --- */}
+                <ReportPageLayout letterhead={letterhead}>
+                    <div className="flex flex-col h-full justify-center">
                         <div className="break-inside-avoid">
                             <h3 className="text-xl font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Sistemas Operativos</h3>
-                            <p className="text-sm text-slate-500 mb-6">
+                            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
                                 Distribución de sistemas operativos a través de la flota monitoreada. La diversidad en SO impacta las estrategias de gestión de parches.
                             </p>
-                            <div className="h-64 w-full">
+                            <div className="h-72 w-full">
                                 <DistributionChart data={osDistribution} colors={OS_COLORS} />
                             </div>
-                            <div className="flex flex-wrap justify-center gap-4 mt-4">
-                                {osDistribution.slice(0, 8).map((d, i) => (
-                                    <div key={i} className="text-sm flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: OS_COLORS[i] }}></span>
-                                        <span className="font-bold text-slate-700">{d.value}</span> <span className="text-slate-600">{d.name}</span>
+                            <div className="flex flex-wrap justify-center gap-3 mt-8 max-w-2xl mx-auto">
+                                {osDistribution.slice(0, 12).map((d, i) => (
+                                    <div key={i} className="text-xs flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-full border border-slate-100">
+                                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: OS_COLORS[i % OS_COLORS.length] }}></span>
+                                        <span className="font-bold text-slate-700">{d.value}</span> <span className="text-slate-500">{d.name}</span>
                                     </div>
                                 ))}
                             </div>
