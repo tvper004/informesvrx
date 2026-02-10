@@ -117,18 +117,18 @@ export default function ReportPage() {
 
                 {/* --- PAGE 1: Executive Summary --- */}
                 <ReportPageLayout letterhead={letterhead}>
-                    <div className="text-center mb-12 mt-4">
-                        <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">Informe Automatizado de Seguridad</h1>
-                        <p className="text-slate-500 text-lg uppercase tracking-wide font-medium">Vicarius - Análisis y Gestión de Vulnerabilidades</p>
-                        <div className="flex items-center justify-center gap-2 mt-4 text-slate-400 bg-slate-50 inline-flex px-4 py-1.5 rounded-full text-sm">
-                            <Calendar className="w-4 h-4" />
+                    <div className="text-center mb-8 mt-2">
+                        <h1 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">Informe Automatizado de Seguridad</h1>
+                        <p className="text-slate-500 text-sm uppercase tracking-wide font-medium">Vicarius - Análisis y Gestión de Vulnerabilidades</p>
+                        <div className="flex items-center justify-center gap-2 mt-3 text-slate-400 bg-slate-50 inline-flex px-3 py-1 rounded-full text-xs">
+                            <Calendar className="w-3.5 h-3.5" />
                             <span>{formatDate(dateRange.start)} - {formatDate(dateRange.end)}</span>
                         </div>
                     </div>
 
-                    <div className="bg-slate-50 border-l-4 border-indigo-500 p-6 mb-10 rounded-r-lg">
-                        <h2 className="text-xl font-bold text-slate-800 mb-3">Resumen Ejecutivo</h2>
-                        <p className="text-slate-600 leading-relaxed text-justify">
+                    <div className="bg-slate-50 border-l-4 border-indigo-500 p-4 mb-8 rounded-r-lg">
+                        <h2 className="text-lg font-bold text-slate-800 mb-2">Resumen Ejecutivo</h2>
+                        <p className="text-slate-600 text-sm leading-relaxed text-justify">
                             Este informe proporciona un análisis exhaustivo de la postura de ciberseguridad de la organización para el período seleccionado.
                             Actualmente estamos monitoreando un total de <strong className="text-slate-900">{kpis.totalAssets} activos</strong>.
                             Durante este período, nuestros esfuerzos de remediación han abordado con éxito <strong className="text-green-600">{kpis.mitigatedVulns} vulnerabilidades</strong>.
@@ -152,18 +152,18 @@ export default function ReportPage() {
 
                 </ReportPageLayout>
 
-                {/* --- PAGE 2: Severity Distribution --- */}
+                {/* --- PAGE 2: Distribution Charts (Stacked) --- */}
                 <ReportPageLayout letterhead={letterhead}>
-                    <div className="flex flex-col h-full justify-center">
+                    <div className="flex flex-col gap-12 h-full justify-center">
                         <div className="break-inside-avoid">
                             <h3 className="text-xl font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Distribución por Severidad</h3>
                             <p className="text-sm text-slate-500 mb-6 leading-relaxed">
                                 Desglose de las vulnerabilidades activas actuales por nivel de severidad. Se debe poner énfasis en estandarizar los problemas de severidad Crítica y Alta.
                             </p>
-                            <div className="h-72 w-full">
+                            <div className="h-64 w-full">
                                 <DistributionChart data={severityData} colors={SEVERITY_COLORS} />
                             </div>
-                            <div className="flex flex-wrap justify-center gap-4 mt-8">
+                            <div className="flex flex-wrap justify-center gap-4 mt-4">
                                 {severityData.map((d, i) => (
                                     <div key={i} className="text-sm flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
                                         <span className="w-3 h-3 rounded-full" style={{ backgroundColor: SEVERITY_COLORS[i] }}></span>
@@ -172,25 +172,20 @@ export default function ReportPage() {
                                 ))}
                             </div>
                         </div>
-                    </div>
-                </ReportPageLayout>
 
-                {/* --- PAGE 3: OS Distribution --- */}
-                <ReportPageLayout letterhead={letterhead}>
-                    <div className="flex flex-col h-full justify-center">
                         <div className="break-inside-avoid">
                             <h3 className="text-xl font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Sistemas Operativos</h3>
                             <p className="text-sm text-slate-500 mb-6 leading-relaxed">
                                 Distribución de sistemas operativos a través de la flota monitoreada. La diversidad en SO impacta las estrategias de gestión de parches.
                             </p>
-                            <div className="h-72 w-full">
+                            <div className="h-64 w-full">
                                 <DistributionChart data={osDistribution} colors={OS_COLORS} />
                             </div>
-                            <div className="flex flex-wrap justify-center gap-3 mt-8 max-w-2xl mx-auto">
-                                {osDistribution.slice(0, 12).map((d, i) => (
-                                    <div key={i} className="text-xs flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-full border border-slate-100">
-                                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: OS_COLORS[i % OS_COLORS.length] }}></span>
-                                        <span className="font-bold text-slate-700">{d.value}</span> <span className="text-slate-500">{d.name}</span>
+                            <div className="flex flex-wrap justify-center gap-4 mt-4">
+                                {osDistribution.slice(0, 8).map((d, i) => (
+                                    <div key={i} className="text-sm flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
+                                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: OS_COLORS[i % OS_COLORS.length] }}></span>
+                                        <span className="font-bold text-slate-700">{d.value}</span> <span className="text-slate-600">{d.name}</span>
                                     </div>
                                 ))}
                             </div>
