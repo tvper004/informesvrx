@@ -7,11 +7,12 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 interface MonthlyTrendsProps {
     data: { date: string; detected: number; mitigated: number }[];
     onClick?: (data: any) => void;
+    height?: number;
 }
 
-export const MonthlyTrendsChart = ({ data, onClick }: MonthlyTrendsProps) => {
+export const MonthlyTrendsChart = ({ data, onClick, height = 300 }: MonthlyTrendsProps) => {
     return (
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={height}>
             <BarChart
                 data={data}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -43,37 +44,63 @@ interface DistributionChartProps {
     data: { name: string; value: number }[];
     colors?: string[];
     onClick?: (data: any) => void;
+    hideLegend?: boolean;
+    height?: number;
 }
 
 const DEFAULT_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6'];
 
-export const DistributionChart = ({ data, colors = DEFAULT_COLORS, onClick }: DistributionChartProps) => {
+export const DistributionChart = ({ data, colors = DEFAULT_COLORS, onClick, hideLegend = true, height = 300 }: DistributionChartProps) => {
+    const total = React.useMemo(() => data.reduce((acc, curr) => acc + curr.value, 0), [data]);
+
     return (
-        <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-                <Pie
-                    data={data}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="value"
-                    onClick={(data) => onClick && onClick(data)}
-                    className="cursor-pointer focus:outline-none"
-                    nameKey="name"
-                >
-                    {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="none" />
-                    ))}
-                </Pie>
-                <Tooltip
-                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" />
-            </PieChart>
-        </ResponsiveContainer>
+        <div className="relative w-full" style={{ height: `${height}px` }}>
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Pie
+                        data={data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={height * 0.23}
+                        outerRadius={height * 0.3}
+                        fill="#8884d8"
+                        paddingAngle={5}
+                        dataKey="value"
+                        onClick={(data) => onClick && onClick(data)}
+                        className="cursor-pointer focus:outline-none"
+                        nameKey="name"
+                    >
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="none" />
+                        ))}
+                    </Pie>
+                    <Tooltip
+                        contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    {!hideLegend && <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />}
+                </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ height: `${height}px` }}>
+                <span className="font-bold text-slate-800 tabular-nums" style={{ fontSize: `${height * 0.1}px` }}>{total.toLocaleString()}</span>
+                <span className="text-slate-500 font-medium uppercase tracking-wider" style={{ fontSize: `${height * 0.04}px` }}>Total</span>
+            </div>
+        </div>
+    );
+};
+
+export const DistributionLegend = ({ data, colors = DEFAULT_COLORS, columns = 2 }: { data: { name: string; value: number }[], colors?: string[], columns?: number }) => {
+    return (
+        <div className={`grid grid-cols-1 md:grid-cols-${columns} gap-x-6 gap-y-2 mt-4`}>
+            {data.map((entry, index) => (
+                <div key={entry.name} className="flex items-center justify-between text-xs text-slate-600 group hover:bg-slate-50 p-1 rounded transition-colors">
+                    <div className="flex items-center gap-2 truncate">
+                        <span className="w-2.5 h-2.5 rounded-full block flex-shrink-0" style={{ backgroundColor: colors[index % colors.length] }}></span>
+                        <span className="truncate" title={entry.name}>{entry.name}</span>
+                    </div>
+                    <span className="font-bold text-slate-800 tabular-nums">({entry.value.toLocaleString()})</span>
+                </div>
+            ))}
+        </div>
     );
 };
 

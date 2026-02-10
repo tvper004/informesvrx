@@ -12,6 +12,8 @@ interface DashboardContextType {
     setLetterhead: (url: string | null) => void;
     dateRange: { start: Date; end: Date };
     setDateRange: (range: { start: Date; end: Date }) => void;
+    totalLicenses: number;
+    setTotalLicenses: (count: number) => void;
     loadFiles: (files: File[]) => Promise<void>;
     resetData: () => void;
 }
@@ -38,6 +40,21 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         const start = new Date(new Date().getFullYear(), 0, 1); // Jan 1st of current year
         return { start, end };
     });
+
+    const [totalLicenses, setTotalLicensesState] = useState<number>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('total_licenses');
+            return saved ? parseInt(saved) : 1000;
+        }
+        return 1000;
+    });
+
+    const setTotalLicenses = (count: number) => {
+        setTotalLicensesState(count);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('total_licenses', count.toString());
+        }
+    };
 
     const loadFiles = async (files: File[]) => {
         setIsLoading(true);
@@ -97,7 +114,9 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             dateRange,
             setDateRange,
             loadFiles,
-            resetData
+            resetData,
+            totalLicenses,
+            setTotalLicenses
         }}>
             {children}
         </DashboardContext.Provider>

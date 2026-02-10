@@ -11,13 +11,13 @@ import {
     getTop50Vulnerable,
     getSeverityDistribution
 } from '@/lib/analytics';
-import { MonthlyTrendsChart, DistributionChart } from '@/components/Charts';
-import { Printer, Upload, ArrowLeft, Trash2, Calendar, FileText } from 'lucide-react';
+import { MonthlyTrendsChart, DistributionChart, DistributionLegend } from '@/components/Charts';
+import { Printer, Upload, ArrowLeft, Trash2, Calendar, FileText, Monitor, TrendingUp, CheckCircle, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { DateRangePicker } from '@/components/DateRangePicker';
 
 export default function ReportPage() {
-    const { data, letterhead, setLetterhead, dateRange, setDateRange } = useDashboard();
+    const { data, letterhead, setLetterhead, dateRange, setDateRange, totalLicenses } = useDashboard();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Analytics Calculation (Scoped to Report Range)
@@ -27,7 +27,18 @@ export default function ReportPage() {
     const assetStatus = useMemo(() => getAssetStatus(data), [data]);
     const topMitigated = useMemo(() => getTop50Mitigated(data, dateRange), [data, dateRange]);
     const topVulnerable = useMemo(() => getTop50Vulnerable(data), [data]);
-    const severityData = useMemo(() => getSeverityDistribution(data), [data]);
+
+    const severityDataDetected = useMemo(() => {
+        const dist = getSeverityDistribution(data, 'detected', dateRange);
+        const translations: Record<string, string> = { 'Critical': 'Crítica', 'High': 'Alta', 'Medium': 'Media', 'Low': 'Baja' };
+        return dist.map(d => ({ name: translations[d.name] || d.name, value: d.value }));
+    }, [data, dateRange]);
+
+    const severityDataMitigated = useMemo(() => {
+        const dist = getSeverityDistribution(data, 'mitigated', dateRange);
+        const translations: Record<string, string> = { 'Critical': 'Crítica', 'High': 'Alta', 'Medium': 'Media', 'Low': 'Baja' };
+        return dist.map(d => ({ name: translations[d.name] || d.name, value: d.value }));
+    }, [data, dateRange]);
 
     const handlePrint = () => {
         window.print();
@@ -117,77 +128,123 @@ export default function ReportPage() {
 
                 {/* --- PAGE 1: Executive Summary --- */}
                 <ReportPageLayout letterhead={letterhead}>
-                    <div className="text-center mb-8 mt-2">
-                        <h1 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">Informe Automatizado de Seguridad</h1>
-                        <p className="text-slate-500 text-sm uppercase tracking-wide font-medium">Vicarius - Análisis y Gestión de Vulnerabilidades</p>
-                        <div className="flex items-center justify-center gap-2 mt-3 text-slate-400 bg-slate-50 inline-flex px-3 py-1 rounded-full text-xs">
+                    <div className="text-center mb-6 mt-2">
+                        <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Informe Automatizado de Seguridad</h1>
+                        <hr className="border-t-2 border-slate-900 w-full mb-4" />
+                        <div className="flex items-center justify-center gap-2 text-slate-400 bg-slate-50 inline-flex px-3 py-1 rounded-full text-xs">
                             <Calendar className="w-3.5 h-3.5" />
                             <span>{formatDate(dateRange.start)} - {formatDate(dateRange.end)}</span>
                         </div>
                     </div>
 
-                    <div className="bg-slate-50 border-l-4 border-indigo-500 p-4 mb-8 rounded-r-lg">
-                        <h2 className="text-lg font-bold text-slate-800 mb-2">Resumen Ejecutivo</h2>
-                        <p className="text-slate-600 text-sm leading-relaxed text-justify">
+                    <div className="bg-slate-50 border-l-4 border-indigo-500 p-5 mb-6 rounded-r-lg">
+                        <h2 className="text-lg font-bold text-slate-800 mb-2 font-serif uppercase tracking-tight">Resumen Ejecutivo</h2>
+                        <p className="text-slate-600 text-[13px] leading-relaxed text-justify">
                             Este informe proporciona un análisis exhaustivo de la postura de ciberseguridad de la organización para el período seleccionado.
                             Actualmente estamos monitoreando un total de <strong className="text-slate-900">{kpis.totalAssets} activos</strong>.
+                            En términos de gestión de recursos, disponemos de un total de <strong className="text-slate-900">{totalLicenses} licencias contratadas</strong>, de las cuales <strong className="text-slate-900">{kpis.totalAssets} están consumidas</strong>, dejando un margen de <strong className="text-green-600">{Math.max(0, totalLicenses - kpis.totalAssets)} licencias libres</strong>.
+                        </p>
+                        <p className="text-slate-600 text-[13px] leading-relaxed text-justify mt-3">
                             Durante este período, nuestros esfuerzos de remediación han abordado con éxito <strong className="text-green-600">{kpis.mitigatedVulns} vulnerabilidades</strong>.
-
-                            El análisis actual muestra un Puntaje de Riesgo Promedio de <strong className="text-slate-900">{kpis.avgRiskScore}</strong> en todo el entorno.
-                            Las estrategias de remediación activa han mantenido un Tiempo Medio de Remediación (MTTR) promedio de <strong className="text-indigo-600">{kpis.avgMTTR} días</strong>.
-                            Es crucial priorizar las {kpis.criticalVulns} vulnerabilidades Críticas/Altas identificadas en el backlog activo para reducir aún más la superficie de ataque.
+                            El análisis actual muestra un Puntaje de Riesgo Promedio de <strong className="text-slate-900">{kpis.avgRiskScore}</strong>.
+                            Las estrategias de remediación activa han mantenido un Tiempo Medio de Remediación (MTTR) de <strong className="text-indigo-600">{kpis.avgMTTR} días</strong>.
+                            Es crucial priorizar las {kpis.criticalVulns} vulnerabilidades Críticas/Altas identificadas en el backlog activo.
                         </p>
                     </div>
 
-                    <div className="mb-8 break-inside-avoid">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200">Análisis de Tendencias de Vulnerabilidad</h3>
-                        <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                            El siguiente gráfico ilustra el volumen mensual de vulnerabilidades detectadas frente a las mitigaciones ejecutadas.
-                            Una actividad de mitigación consistente en relación con las tasas de detección indica un proceso de gestión de vulnerabilidades saludable.
+                    <div className="break-inside-avoid">
+                        <div className="flex items-center gap-2 mb-1 border-b pb-1 border-slate-200">
+                            <TrendingUp className="w-5 h-5 text-indigo-600" />
+                            <h3 className="text-xl font-bold text-slate-800">Análisis de Tendencias de Vulnerabilidad</h3>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+                            Volumen mensual de vulnerabilidades detectadas frente a mitigaciones ejecutadas.
                         </p>
-                        <div className="bg-white p-4 border border-slate-100 rounded-lg">
-                            <MonthlyTrendsChart data={monthlyTrends} />
+                        <div className="w-full mb-4">
+                            <MonthlyTrendsChart data={monthlyTrends} height={200} />
+                        </div>
+
+                        {/* Monthly Trends Table */}
+                        <div className="overflow-x-auto border border-slate-100 rounded-lg">
+                            <table className="w-full text-[10px] text-left">
+                                <thead className="bg-slate-50 text-slate-500 uppercase">
+                                    <tr>
+                                        <th className="px-3 py-1.5 font-semibold border-b">Métrica</th>
+                                        {monthlyTrends.map(m => (
+                                            <th key={m.date} className="px-3 py-1.5 font-semibold border-b text-center">{m.date}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="border-b border-slate-50">
+                                        <td className="px-3 py-1.5 font-medium text-slate-700 bg-slate-50/30">Detectadas</td>
+                                        {monthlyTrends.map(m => (
+                                            <td key={m.date} className="px-3 py-1.5 text-center text-slate-600 font-mono">{m.detected.toLocaleString()}</td>
+                                        ))}
+                                    </tr>
+                                    <tr>
+                                        <td className="px-3 py-1.5 font-medium text-slate-700 bg-slate-50/30">Mitigadas</td>
+                                        {monthlyTrends.map(m => (
+                                            <td key={m.date} className="px-3 py-1.5 text-center text-slate-600 font-mono">{m.mitigated.toLocaleString()}</td>
+                                        ))}
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-
                 </ReportPageLayout>
 
                 {/* --- PAGE 2: Distribution Charts (Stacked) --- */}
                 <ReportPageLayout letterhead={letterhead}>
-                    <div className="flex flex-col gap-8 h-full justify-center">
+                    <div className="space-y-4">
                         <div className="break-inside-avoid">
-                            <h3 className="text-xl font-bold text-slate-800 mb-1 border-b pb-1 border-slate-200">Distribución por Severidad</h3>
-                            <p className="text-sm text-slate-500 mb-3 leading-relaxed">
-                                Desglose de las vulnerabilidades activas actuales por nivel de severidad. Se debe poner énfasis en estandarizar los problemas de severidad Crítica y Alta.
-                            </p>
-                            <div className="h-64 w-full">
-                                <DistributionChart data={severityData} colors={SEVERITY_COLORS} />
+                            <div className="flex items-center gap-2 mb-1 border-b pb-1 border-slate-200">
+                                <FileText className="w-5 h-5 text-indigo-600" />
+                                <h3 className="text-xl font-bold text-slate-800">Severidad de Vulnerabilidades Detectadas</h3>
                             </div>
-                            <div className="flex flex-wrap justify-center gap-4 mt-4">
-                                {severityData.map((d, i) => (
-                                    <div key={i} className="text-sm flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: SEVERITY_COLORS[i] }}></span>
-                                        <span className="font-bold text-slate-700">{d.value}</span> <span className="text-slate-600">{d.name}</span>
-                                    </div>
-                                ))}
+                            <p className="text-[11px] text-slate-500 mb-2 leading-relaxed">
+                                Desglose de vulnerabilidades identificadas durante este período, clasificadas por su nivel de impacto crítico.
+                            </p>
+                            <div className="flex items-center justify-center gap-4">
+                                <div className="w-1/2">
+                                    <DistributionChart data={severityDataDetected} colors={SEVERITY_COLORS} height={180} />
+                                </div>
+                                <div className="w-1/2">
+                                    <DistributionLegend data={severityDataDetected} colors={SEVERITY_COLORS} columns={1} />
+                                </div>
                             </div>
                         </div>
 
                         <div className="break-inside-avoid">
-                            <h3 className="text-xl font-bold text-slate-800 mb-1 border-b pb-1 border-slate-200">Sistemas Operativos</h3>
-                            <p className="text-sm text-slate-500 mb-3 leading-relaxed">
-                                Distribución de sistemas operativos a través de la flota monitoreada. La diversidad en SO impacta las estrategias de gestión de parches.
-                            </p>
-                            <div className="h-64 w-full">
-                                <DistributionChart data={osDistribution} colors={OS_COLORS} />
+                            <div className="flex items-center gap-2 mb-1 border-b pb-1 border-slate-200">
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                <h3 className="text-xl font-bold text-slate-800">Severidad de Vulnerabilidades Mitigadas</h3>
                             </div>
-                            <div className="flex flex-wrap justify-center gap-4 mt-4">
-                                {osDistribution.slice(0, 8).map((d, i) => (
-                                    <div key={i} className="text-sm flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: OS_COLORS[i % OS_COLORS.length] }}></span>
-                                        <span className="font-bold text-slate-700">{d.value}</span> <span className="text-slate-600">{d.name}</span>
-                                    </div>
-                                ))}
+                            <p className="text-[11px] text-slate-500 mb-2 leading-relaxed">
+                                Representación de la efectividad en la resolución de problemas según su nivel de severidad original.
+                            </p>
+                            <div className="flex items-center justify-center gap-4">
+                                <div className="w-1/2">
+                                    <DistributionChart data={severityDataMitigated} colors={SEVERITY_COLORS} height={180} />
+                                </div>
+                                <div className="w-1/2">
+                                    <DistributionLegend data={severityDataMitigated} colors={SEVERITY_COLORS} columns={1} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="break-inside-avoid">
+                            <div className="flex items-center gap-2 mb-1 border-b pb-1 border-slate-200">
+                                <Monitor className="w-5 h-5 text-slate-600" />
+                                <h3 className="text-xl font-bold text-slate-800">Distribución por Sistemas Operativos</h3>
+                            </div>
+                            <div className="flex items-center justify-center gap-4">
+                                <div className="w-1/2">
+                                    <DistributionChart data={osDistribution} colors={OS_COLORS} height={180} />
+                                </div>
+                                <div className="w-1/2">
+                                    <DistributionLegend data={osDistribution.slice(0, 5)} colors={OS_COLORS} columns={1} />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -198,7 +255,7 @@ export default function ReportPage() {
                     <ReportPageLayout key={`mitigated-${pageIndex}`} letterhead={letterhead}>
                         <div className="w-full">
                             <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
-                                <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                                <CheckCircle className="w-5 h-5 text-green-600" />
                                 Top 50 Activos Más Mitigados {pageIndex > 0 && <span className="text-sm font-normal text-slate-500">(Cont. {pageIndex + 1})</span>}
                             </h2>
                             {pageIndex === 0 && (
@@ -223,7 +280,7 @@ export default function ReportPage() {
                     <ReportPageLayout key={`vulnerable-${pageIndex}`} letterhead={letterhead}>
                         <div className="w-full">
                             <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
-                                <AlertIcon className="w-5 h-5 text-red-600" />
+                                <AlertTriangle className="w-5 h-5 text-red-600" />
                                 Top 50 Activos Más Vulnerables {pageIndex > 0 && <span className="text-sm font-normal text-slate-500">(Cont. {pageIndex + 1})</span>}
                             </h2>
                             {pageIndex === 0 && (
@@ -294,11 +351,6 @@ const ReportPageLayout = ({ children, letterhead }: { children: React.ReactNode,
         {/* Top Padding: ~40mm, Bottom Padding: ~30mm, Side: 20mm */}
         <div className="relative z-10 pt-[40mm] pb-[30mm] px-[20mm] h-full flex flex-col">
             {children}
-
-            {/* Footer Text if needed (not overlapping letterhead footer) */}
-            <div className="mt-auto text-center text-[10px] text-slate-300 pt-4">
-                Generado por el Agente de Reportes Vicarius
-            </div>
         </div>
     </div>
 );
@@ -329,13 +381,7 @@ const SimpleTable = ({ headers, data, colorClass }: { headers: string[], data: a
     </div>
 );
 
-const CheckCircleIcon = (props: any) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-);
 
-const AlertIcon = (props: any) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-);
 
 function chunkArray<T>(array: T[], size: number): T[][] {
     const chunked_arr = [];

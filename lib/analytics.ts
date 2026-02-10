@@ -89,25 +89,30 @@ export const calculateKPIs = (data: DashboardData, range: { start: Date; end: Da
     };
 };
 
-export const getSeverityDistribution = (data: DashboardData) => {
-    // Current Active Vulnerabilities Snapshot
-    const active = data.vulnerabilities.filter(v =>
-        !v.MitigatedEventDetectionDate || v.MitigatedEventDetectionDate === 0
-    );
+export const getSeverityDistribution = (data: DashboardData, type: 'active' | 'detected' | 'mitigated' = 'active', range?: { start: Date; end: Date }) => {
+    let dataset: any[] = [];
+
+    if (type === 'active') {
+        dataset = data.vulnerabilities.filter(v => !v.MitigatedEventDetectionDate || v.MitigatedEventDetectionDate === 0);
+    } else if (type === 'detected') {
+        dataset = data.vulnerabilities.filter(v => range ? isWithinRange(v.eventcreatedat, range) : true);
+    } else if (type === 'mitigated') {
+        // Find severity of mitigated vulnerabilities. We need to match mitigation with vulnerability info.
+        // Usually mitigations have CVE and asset.
+        dataset = data.mitigations.filter(m => range ? isWithinRange(m.mitigation_date, range) : true);
+    }
 
     const dist: Record<string, number> = { Critical: 0, High: 0, Medium: 0, Low: 0 };
 
-    active.forEach(v => {
-        // Normalize severity
-        let sev = (v.severity || 'Low').trim();
-        // Capitalize first letter
+    dataset.forEach(item => {
+        // item could be Vulnerability (detected/active) or Mitigation
+        let sev = (item.severity || 'Low').trim();
         sev = sev.charAt(0).toUpperCase() + sev.slice(1).toLowerCase();
 
         if (dist[sev] !== undefined) {
             dist[sev]++;
         } else {
-            // Fallback for unknown severities if needed, or mapped
-            if (sev === 'Ckritical') dist['Critical']++; // typo check?
+            if (sev === 'Ckritical') dist['Critical']++;
         }
     });
 

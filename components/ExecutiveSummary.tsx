@@ -8,20 +8,21 @@ import {
     getOSDistribution,
     getAssetStatus,
     getTop50Mitigated,
-    getTop50Vulnerable
+    getTop50Vulnerable,
+    getSeverityDistribution
 } from '@/lib/analytics';
 import {
-    Activity, AlertTriangle, CheckCircle, Clock, ShieldAlert,
+    Activity, AlertTriangle, CheckCircle, Clock, ShieldAlert, ShieldCheck,
     TrendingUp, Monitor, ListOrdered, Calendar as CalendarIcon
 } from 'lucide-react';
 import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { MonthlyTrendsChart, DistributionChart, TopListTable } from './Charts';
+import { MonthlyTrendsChart, DistributionChart, DistributionLegend, TopListTable } from './Charts';
 import { DateRangePicker } from './DateRangePicker';
 import { Modal } from './Modal';
 import { clsx } from 'clsx';
 
 export const ExecutiveSummary = () => {
-    const { data, dateRange, setDateRange } = useDashboard();
+    const { data, dateRange, setDateRange, totalLicenses, setTotalLicenses } = useDashboard();
 
     // Analytics Hooks
     const kpis = useMemo(() => calculateKPIs(data, dateRange), [data, dateRange]);
@@ -31,35 +32,18 @@ export const ExecutiveSummary = () => {
     const topMitigated = useMemo(() => getTop50Mitigated(data, dateRange), [data, dateRange]);
     const topVulnerable = useMemo(() => getTop50Vulnerable(data), [data]); // Vulnerable is snapshot
 
-    // Severity Distribution (Filtered by snapshot or range? Usually snapshot of CURRENT active)
-    const severityData = useMemo(() => {
-        // Active vulnerabilities are those without mitigation date
-        const active = data.vulnerabilities.filter(v =>
-            !v.MitigatedEventDetectionDate || v.MitigatedEventDetectionDate === 0
-        );
+    // Severity Distribution Data
+    const severityDataDetected = useMemo(() => {
+        const dist = getSeverityDistribution(data, 'detected', dateRange);
+        const translations: Record<string, string> = { 'Critical': 'Crítica', 'High': 'Alta', 'Medium': 'Media', 'Low': 'Baja' };
+        return dist.map(d => ({ name: translations[d.name] || d.name, value: d.value }));
+    }, [data, dateRange]);
 
-        const dist: Record<string, number> = { Critical: 0, High: 0, Medium: 0, Low: 0 };
-        active.forEach(v => {
-            let sev = (v.severity || 'Low').trim();
-            sev = sev.charAt(0).toUpperCase() + sev.slice(1).toLowerCase();
-            // Translate Severity Keys for display if needed, but usually standardized English terms are used. 
-            // User requested Spanish. Let's map.
-            if (dist[sev] !== undefined) dist[sev]++;
-        });
-
-        // Translate for Display
-        const translations: Record<string, string> = {
-            'Critical': 'Crítica',
-            'High': 'Alta',
-            'Medium': 'Media',
-            'Low': 'Baja'
-        };
-
-        return Object.entries(dist).map(([name, value]) => ({
-            name: translations[name] || name,
-            value
-        }));
-    }, [data.vulnerabilities]);
+    const severityDataMitigated = useMemo(() => {
+        const dist = getSeverityDistribution(data, 'mitigated', dateRange);
+        const translations: Record<string, string> = { 'Critical': 'Crítica', 'High': 'Alta', 'Medium': 'Media', 'Low': 'Baja' };
+        return dist.map(d => ({ name: translations[d.name] || d.name, value: d.value }));
+    }, [data, dateRange]);
 
     // --- Modal State & Logic ---
     const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; title: string; type: 'list' | 'cve'; data: any[] }>({
@@ -74,12 +58,6 @@ export const ExecutiveSummary = () => {
     };
 
     const handleOSClick = (entry: any) => {
-        const assets = data.endpoints.filter(e => e.SO === entry.name); // Using original name might need care if translated? 
-        // Wait, OS names come from CSV (Windows Server etc), no need to translate those usually.
-        // But previously I translated severity names. Pie chart uses translated names for keys? 
-        // Charts component uses `nameKey="name"`. 
-        // For OS, names are raw from CSV.
-        // `entry.name` comes from Recharts click payload.
         const assetsFiltered = data.endpoints.filter(e => e.SO === entry.name);
         openModal(`Activos: ${entry.name}`, 'list', assetsFiltered.map(a => ({ name: a.HOSTNAME, detail: a.VERSION })));
     };
@@ -87,18 +65,6 @@ export const ExecutiveSummary = () => {
     const handleStatusClick = (entry: any) => {
         const now = new Date();
         const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30)).getTime();
-        // Entry name will be translated in Chart? 
-        // Wait, `getAssetStatus` returns English strings. I should update `getAssetStatus` or translate here.
-        // Best implementation is to translate the logic here or in analytics.
-        // Currently `getAssetStatus` returns 'Active (<30 days)' and 'Inactive...'.
-        // I will translate strictly in the UI layer (here) but `getAssetStatus` stays English for logic? 
-        // No, `getAssetStatus` returns data for the chart. I need to map it.
-        // Actually, let's fix `getAssetStatus` in analytics OR just map it here.
-
-        // I'll map it here for the click handler logic.
-        // But the chart displays what `assetStatus` contains.
-        // So I need to translate `assetStatus` array.
-
         const isInactive = entry.name.includes('Inactivo') || entry.name.includes('Inactive');
 
         const assets = data.endpoints.filter(e => {
@@ -177,32 +143,100 @@ export const ExecutiveSummary = () => {
                         <TrendingUp className="w-5 h-5 text-indigo-600" />
                         <h3 className="text-lg font-semibold text-slate-800">Tendencias (Detectadas vs Mitigadas)</h3>
                     </div>
-                    <MonthlyTrendsChart data={monthlyTrends} />
+                    <div className="space-y-6">
+                        <MonthlyTrendsChart data={monthlyTrends} />
+
+                        {/* Trends Table */}
+                        <div className="overflow-x-auto border border-slate-100 rounded-lg">
+                            <table className="w-full text-xs text-left">
+                                <thead className="bg-slate-50 text-slate-500 uppercase">
+                                    <tr>
+                                        <th className="px-4 py-2 font-semibold border-b">Métrica</th>
+                                        {monthlyTrends.map(m => (
+                                            <th key={m.date} className="px-4 py-2 font-semibold border-b text-center">{m.date}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="border-b border-slate-50">
+                                        <td className="px-4 py-2 font-medium text-slate-700 bg-slate-50/50">Detectadas</td>
+                                        {monthlyTrends.map(m => (
+                                            <td key={m.date} className="px-4 py-2 text-center text-slate-600 font-mono">{m.detected.toLocaleString()}</td>
+                                        ))}
+                                    </tr>
+                                    <tr>
+                                        <td className="px-4 py-2 font-medium text-slate-700 bg-slate-50/50">Mitigadas</td>
+                                        {monthlyTrends.map(m => (
+                                            <td key={m.date} className="px-4 py-2 text-center text-slate-600 font-mono">{m.mitigated.toLocaleString()}</td>
+                                        ))}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Severity Distribution */}
+                {/* Severidad Detectadas */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Distribución por Severidad</h3>
-                    <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={severityData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {severityData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={SEVERITY_COLORS[index % SEVERITY_COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        <LegendGrid data={severityData} colors={SEVERITY_COLORS} />
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Severidad de Detectadas</h3>
+                    <div className="h-auto">
+                        <DistributionChart data={severityDataDetected} colors={SEVERITY_COLORS} />
+                        <DistributionLegend data={severityDataDetected} colors={SEVERITY_COLORS} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Severity Mitigated Row & License Info */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Severidad de Mitigadas</h3>
+                    <div className="h-auto">
+                        <DistributionChart data={severityDataMitigated} colors={SEVERITY_COLORS} />
+                        <DistributionLegend data={severityDataMitigated} colors={SEVERITY_COLORS} />
+                    </div>
+                </div>
+
+                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <div className="flex items-center gap-2 mb-6">
+                        <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                        <h3 className="text-lg font-semibold text-slate-800">Uso de Licencias Vicarius</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-500 uppercase tracking-wider">Licencias Contratadas</label>
+                            <input
+                                type="number"
+                                value={totalLicenses}
+                                onChange={(e) => setTotalLicenses(parseInt(e.target.value) || 0)}
+                                className="w-full text-2xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                            />
+                            <p className="text-xs text-slate-400 font-medium italic">Campo editable para el reporte</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-500 uppercase tracking-wider">Licencias Consumidas</label>
+                            <div className="text-3xl font-bold text-slate-900">{kpis.totalAssets}</div>
+                            <p className="text-xs text-slate-400 font-medium italic">Basado en activos totales</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-500 uppercase tracking-wider">Disponibilidad</label>
+                            <div className={clsx(
+                                "text-3xl font-bold",
+                                (totalLicenses - kpis.totalAssets) < 0 ? "text-red-600" : "text-green-600"
+                            )}>
+                                {totalLicenses - kpis.totalAssets}
+                            </div>
+                            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mt-2">
+                                <div
+                                    className={clsx(
+                                        "h-full transition-all duration-500",
+                                        (kpis.totalAssets / totalLicenses) > 0.9 ? "bg-red-500" : "bg-indigo-500"
+                                    )}
+                                    style={{ width: `${Math.min((kpis.totalAssets / totalLicenses) * 100, 100)}%` }}
+                                ></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -211,17 +245,17 @@ export const ExecutiveSummary = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
                     <h3 className="text-lg font-semibold text-slate-800 mb-4">Distribución por Sistema Operativo <span className="text-xs font-normal text-slate-400 ml-2">(Clic para detalles)</span></h3>
-                    <div className="h-auto min-h-[400px] cursor-pointer">
+                    <div className="h-auto min-h-[300px] cursor-pointer">
                         <DistributionChart data={osDistribution} colors={OS_COLORS} onClick={handleOSClick} />
-                        <LegendGrid data={osDistribution.slice(0, 5)} colors={OS_COLORS} />
+                        <DistributionLegend data={osDistribution.slice(0, 6)} colors={OS_COLORS} />
                     </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
                     <h3 className="text-lg font-semibold text-slate-800 mb-4">Estado de los Activos <span className="text-xs font-normal text-slate-400 ml-2">(Clic para detalles)</span></h3>
-                    <div className="h-auto min-h-[400px] cursor-pointer">
+                    <div className="h-auto min-h-[300px] cursor-pointer">
                         <DistributionChart data={translatedAssetStatus} colors={STATUS_COLORS} onClick={handleStatusClick} />
-                        <LegendGrid data={translatedAssetStatus} colors={STATUS_COLORS} />
+                        <DistributionLegend data={translatedAssetStatus} colors={STATUS_COLORS} />
                     </div>
                 </div>
             </div>
@@ -230,14 +264,14 @@ export const ExecutiveSummary = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <TopListTable
                     title="Top 50 Activos Más Mitigados"
-                    data={monthlyTrends.length > 0 ? topMitigated : []} // Only show if data loaded
+                    data={monthlyTrends.length > 0 ? topMitigated : []}
                     icon={<CheckCircle className="w-5 h-5 text-green-600" />}
                     colorClass="bg-green-50 text-green-800 border-green-100"
                     onRowClick={(asset) => handleAssetClick(asset, 'mitigated')}
                 />
                 <TopListTable
                     title="Top 50 Activos Más Vulnerables"
-                    data={monthlyTrends.length > 0 ? topVulnerable : []} // Only show if data loaded
+                    data={monthlyTrends.length > 0 ? topVulnerable : []}
                     icon={<AlertTriangle className="w-5 h-5 text-red-600" />}
                     colorClass="bg-red-50 text-red-800 border-red-100"
                     onRowClick={(asset) => handleAssetClick(asset, 'vulnerable')}
@@ -280,13 +314,6 @@ export const ExecutiveSummary = () => {
                                     </td>
                                 </tr>
                             )}
-                            {modalConfig.data.length === 0 && (
-                                <tr>
-                                    <td colSpan={2} className="px-6 py-8 text-center text-sm text-slate-400">
-                                        No se encontraron ítems.
-                                    </td>
-                                </tr>
-                            )}
                         </tbody>
                     </table>
                 </div>
@@ -306,17 +333,5 @@ const KpiCard = ({ title, value, subtext, icon, bg }: any) => (
         <div className={`p-3 ${bg} rounded-lg`}>
             {icon}
         </div>
-    </div>
-);
-
-const LegendGrid = ({ data, colors }: { data: any[], colors: string[] }) => (
-    <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2">
-        {data.map((entry, index) => (
-            <div key={entry.name} className="flex items-center gap-1.5 text-xs text-slate-600">
-                <span className="w-2.5 h-2.5 rounded-full block" style={{ backgroundColor: colors[index % colors.length] }}></span>
-                <span className="truncate max-w-[120px]">{entry.name}</span>
-                <span className="font-semibold">({entry.value})</span>
-            </div>
-        ))}
     </div>
 );
