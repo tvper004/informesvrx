@@ -154,10 +154,10 @@ export default function ReportPage() {
 
                 {/* --- PAGE 2: Distribution Charts (Stacked) --- */}
                 <ReportPageLayout letterhead={letterhead}>
-                    <div className="flex flex-col gap-12 h-full justify-center">
+                    <div className="flex flex-col gap-8 h-full justify-center">
                         <div className="break-inside-avoid">
-                            <h3 className="text-xl font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Distribución por Severidad</h3>
-                            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                            <h3 className="text-xl font-bold text-slate-800 mb-1 border-b pb-1 border-slate-200">Distribución por Severidad</h3>
+                            <p className="text-sm text-slate-500 mb-3 leading-relaxed">
                                 Desglose de las vulnerabilidades activas actuales por nivel de severidad. Se debe poner énfasis en estandarizar los problemas de severidad Crítica y Alta.
                             </p>
                             <div className="h-64 w-full">
@@ -174,8 +174,8 @@ export default function ReportPage() {
                         </div>
 
                         <div className="break-inside-avoid">
-                            <h3 className="text-xl font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Sistemas Operativos</h3>
-                            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                            <h3 className="text-xl font-bold text-slate-800 mb-1 border-b pb-1 border-slate-200">Sistemas Operativos</h3>
+                            <p className="text-sm text-slate-500 mb-3 leading-relaxed">
                                 Distribución de sistemas operativos a través de la flota monitoreada. La diversidad en SO impacta las estrategias de gestión de parches.
                             </p>
                             <div className="h-64 w-full">
