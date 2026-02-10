@@ -194,7 +194,7 @@ export default function ReportPage() {
                 </ReportPageLayout>
 
                 {/* --- PAGE 3+: Detailed Listings (Top 50 - Paginated) --- */}
-                {chunkArray(topMitigated, 15).map((chunk, pageIndex) => (
+                {chunkArray(topMitigated, 14).map((chunk, pageIndex) => (
                     <ReportPageLayout key={`mitigated-${pageIndex}`} letterhead={letterhead}>
                         <div className="mb-10">
                             <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
@@ -211,7 +211,7 @@ export default function ReportPage() {
 
                             <SimpleTable
                                 headers={['Ranking', 'Nombre del Activo', 'Cantidad de Mitigaciones']}
-                                data={chunk.map((item, i) => [(pageIndex * 15) + i + 1, item.asset, item.count])}
+                                data={chunk.map((item, i) => [(pageIndex * 14) + i + 1, item.asset, item.count])}
                                 colorClass="text-green-700 font-medium"
                             />
                         </div>
@@ -220,7 +220,7 @@ export default function ReportPage() {
 
 
                 {/* --- PAGE 4+: Vulnerable Assets (Top 50 - Paginated) --- */}
-                {chunkArray(topVulnerable, 15).map((chunk, pageIndex) => (
+                {chunkArray(topVulnerable, 14).map((chunk, pageIndex) => (
                     <ReportPageLayout key={`vulnerable-${pageIndex}`} letterhead={letterhead}>
                         <div className="mb-10">
                             <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
@@ -237,7 +237,7 @@ export default function ReportPage() {
 
                             <SimpleTable
                                 headers={['Ranking', 'Nombre del Activo', 'Cantidad de Vulnerabilidades']}
-                                data={chunk.map((item, i) => [(pageIndex * 15) + i + 1, item.asset, item.count])}
+                                data={chunk.map((item, i) => [(pageIndex * 14) + i + 1, item.asset, item.count])}
                                 colorClass="text-red-700 font-medium"
                             />
                         </div>
@@ -267,15 +267,15 @@ export default function ReportPage() {
 
 const ReportPageLayout = ({ children, letterhead }: { children: React.ReactNode, letterhead: string | null }) => (
     <div
-        className="bg-white shadow-xl print:shadow-none w-[210mm] min-h-[297mm] relative mb-8 last:mb-0 print:mb-0 print:break-after-page overflow-hidden"
+        className="bg-white shadow-xl print:shadow-none w-[210mm] h-[297mm] relative mb-8 last:mb-0 print:mb-0 print:break-after-page overflow-hidden"
     >
         {/* Letterhead Background */}
         {letterhead && (
-            <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="absolute inset-0 z-0 pointer-events-none print:fixed print:inset-0">
                 <img
                     src={letterhead}
                     alt="Letterhead"
-                    className="w-full h-full object-cover opacity-100"
+                    className="w-[210mm] h-[297mm] object-fill opacity-100"
                 />
             </div>
         )}
