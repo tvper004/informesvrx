@@ -193,47 +193,56 @@ export default function ReportPage() {
                     </div>
                 </ReportPageLayout>
 
-                {/* --- PAGE 2: Detailed Listings (Top 50) --- */}
-                <ReportPageLayout letterhead={letterhead}>
-                    <div className="mb-10">
-                        <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
-                            <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                            Top 50 Activos Más Mitigados
-                        </h2>
-                        <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                            Los siguientes activos han experimentado la actividad de remediación más significativa durante este período.
-                            Altos recuentos de mitigación a menudo indican entornos volátiles o ciclos de mantenimiento activo.
-                            Estos endpoints representan el foco principal de las operaciones de seguridad recientes.
-                        </p>
+                {/* --- PAGE 3+: Detailed Listings (Top 50 - Paginated) --- */}
+                {chunkArray(topMitigated, 15).map((chunk, pageIndex) => (
+                    <ReportPageLayout key={`mitigated-${pageIndex}`} letterhead={letterhead}>
+                        <div className="mb-10">
+                            <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
+                                <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                                Top 50 Activos Más Mitigados {pageIndex > 0 && <span className="text-sm font-normal text-slate-500">(Cont. {pageIndex + 1})</span>}
+                            </h2>
+                            {pageIndex === 0 && (
+                                <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+                                    Los siguientes activos han experimentado la actividad de remediación más significativa durante este período.
+                                    Altos recuentos de mitigación a menudo indican entornos volátiles o ciclos de mantenimiento activo.
+                                    Estos endpoints representan el foco principal de las operaciones de seguridad recientes.
+                                </p>
+                            )}
 
-                        <SimpleTable
-                            headers={['Ranking', 'Nombre del Activo', 'Cantidad de Mitigaciones']}
-                            data={topMitigated.map((item, i) => [i + 1, item.asset, item.count])}
-                            colorClass="text-green-700 font-medium"
-                        />
-                    </div>
-                </ReportPageLayout>
+                            <SimpleTable
+                                headers={['Ranking', 'Nombre del Activo', 'Cantidad de Mitigaciones']}
+                                data={chunk.map((item, i) => [(pageIndex * 15) + i + 1, item.asset, item.count])}
+                                colorClass="text-green-700 font-medium"
+                            />
+                        </div>
+                    </ReportPageLayout>
+                ))}
 
-                {/* --- PAGE 3: Vulnerable Assets (Top 50) --- */}
-                <ReportPageLayout letterhead={letterhead}>
-                    <div className="mb-10">
-                        <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
-                            <AlertIcon className="w-5 h-5 text-red-600" />
-                            Top 50 Activos Más Vulnerables
-                        </h2>
-                        <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                            Estos activos actualmente presentan el mayor número de vulnerabilidades activas.
-                            Representan el mayor riesgo para la postura de seguridad de la organización y deben ser priorizados para análisis y remediación inmediata.
-                            Los factores que contribuyen a altos recuentos pueden incluir software heredado, problemas de conectividad o implementaciones de parches fallidas.
-                        </p>
 
-                        <SimpleTable
-                            headers={['Ranking', 'Nombre del Activo', 'Cantidad de Vulnerabilidades']}
-                            data={topVulnerable.map((item, i) => [i + 1, item.asset, item.count])}
-                            colorClass="text-red-700 font-medium"
-                        />
-                    </div>
-                </ReportPageLayout>
+                {/* --- PAGE 4+: Vulnerable Assets (Top 50 - Paginated) --- */}
+                {chunkArray(topVulnerable, 15).map((chunk, pageIndex) => (
+                    <ReportPageLayout key={`vulnerable-${pageIndex}`} letterhead={letterhead}>
+                        <div className="mb-10">
+                            <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
+                                <AlertIcon className="w-5 h-5 text-red-600" />
+                                Top 50 Activos Más Vulnerables {pageIndex > 0 && <span className="text-sm font-normal text-slate-500">(Cont. {pageIndex + 1})</span>}
+                            </h2>
+                            {pageIndex === 0 && (
+                                <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+                                    Estos activos actualmente presentan el mayor número de vulnerabilidades activas.
+                                    Representan el mayor riesgo para la postura de seguridad de la organización y deben ser priorizados para análisis y remediación inmediata.
+                                    Los factores que contribuyen a altos recuentos pueden incluir software heredado, problemas de conectividad o implementaciones de parches fallidas.
+                                </p>
+                            )}
+
+                            <SimpleTable
+                                headers={['Ranking', 'Nombre del Activo', 'Cantidad de Vulnerabilidades']}
+                                data={chunk.map((item, i) => [(pageIndex * 15) + i + 1, item.asset, item.count])}
+                                colorClass="text-red-700 font-medium"
+                            />
+                        </div>
+                    </ReportPageLayout>
+                ))}
 
             </div>
 
@@ -317,3 +326,13 @@ const CheckCircleIcon = (props: any) => (
 const AlertIcon = (props: any) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
 );
+
+function chunkArray<T>(array: T[], size: number): T[][] {
+    const chunked_arr = [];
+    let index = 0;
+    while (index < array.length) {
+        chunked_arr.push(array.slice(index, size + index));
+        index += size;
+    }
+    return chunked_arr;
+}
