@@ -8,8 +8,7 @@ Este archivo sirve como puente de conocimiento para cualquier modelo de IA o age
 ## 🎯 REGLAS DE ORO (MANDATORIAS)
 1. **Registro de Cambios**: Cualquier cambio, por pequeño que sea (código, configuración, diseño), **DEBE ser registrado en la sección de [Historial de Cambios](#-historial-de-cambios-log)** al final de este archivo.
 2. **Sincronización con GitHub**: Todo cambio debe ser actualizado inmediatamente en el repositorio oficial:
-   - **Repositorio**: `https://github.com/tvper004/informesvrx`
-   - **Contraseña Provisional**: `12345.` (Del 1 al 5 seguido de un punto).
+
    - *Nota: Asegurarse de realizar `git push` después de cada sesión de cambios relevante.*
 
 ## 🛠️ Stack Tecnológico
