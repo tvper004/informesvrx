@@ -194,9 +194,9 @@ export default function ReportPage() {
                 </ReportPageLayout>
 
                 {/* --- PAGE 3+: Detailed Listings (Top 50 - Paginated) --- */}
-                {chunkArray(topMitigated, 14).map((chunk, pageIndex) => (
+                {chunkArray(topMitigated, 18).map((chunk, pageIndex) => (
                     <ReportPageLayout key={`mitigated-${pageIndex}`} letterhead={letterhead}>
-                        <div className="mb-10">
+                        <div className="w-full">
                             <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
                                 <CheckCircleIcon className="w-5 h-5 text-green-600" />
                                 Top 50 Activos Más Mitigados {pageIndex > 0 && <span className="text-sm font-normal text-slate-500">(Cont. {pageIndex + 1})</span>}
@@ -205,13 +205,12 @@ export default function ReportPage() {
                                 <p className="text-slate-600 text-sm mb-6 leading-relaxed">
                                     Los siguientes activos han experimentado la actividad de remediación más significativa durante este período.
                                     Altos recuentos de mitigación a menudo indican entornos volátiles o ciclos de mantenimiento activo.
-                                    Estos endpoints representan el foco principal de las operaciones de seguridad recientes.
                                 </p>
                             )}
 
                             <SimpleTable
-                                headers={['Ranking', 'Nombre del Activo', 'Cantidad de Mitigaciones']}
-                                data={chunk.map((item, i) => [(pageIndex * 14) + i + 1, item.asset, item.count])}
+                                headers={['Ranking', 'Nombre del Activo', 'Mitigaciones']}
+                                data={chunk.map((item, i) => [(pageIndex * 18) + i + 1, item.asset, item.count])}
                                 colorClass="text-green-700 font-medium"
                             />
                         </div>
@@ -220,24 +219,22 @@ export default function ReportPage() {
 
 
                 {/* --- PAGE 4+: Vulnerable Assets (Top 50 - Paginated) --- */}
-                {chunkArray(topVulnerable, 14).map((chunk, pageIndex) => (
+                {chunkArray(topVulnerable, 18).map((chunk, pageIndex) => (
                     <ReportPageLayout key={`vulnerable-${pageIndex}`} letterhead={letterhead}>
-                        <div className="mb-10">
+                        <div className="w-full">
                             <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2 border-slate-200 flex items-center gap-2">
                                 <AlertIcon className="w-5 h-5 text-red-600" />
                                 Top 50 Activos Más Vulnerables {pageIndex > 0 && <span className="text-sm font-normal text-slate-500">(Cont. {pageIndex + 1})</span>}
                             </h2>
                             {pageIndex === 0 && (
                                 <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                                    Estos activos actualmente presentan el mayor número de vulnerabilidades activas.
-                                    Representan el mayor riesgo para la postura de seguridad de la organización y deben ser priorizados para análisis y remediación inmediata.
-                                    Los factores que contribuyen a altos recuentos pueden incluir software heredado, problemas de conectividad o implementaciones de parches fallidas.
+                                    Estos activos presentan el mayor número de vulnerabilidades activas y deben ser priorizados para análisis y remediación inmediata.
                                 </p>
                             )}
 
                             <SimpleTable
-                                headers={['Ranking', 'Nombre del Activo', 'Cantidad de Vulnerabilidades']}
-                                data={chunk.map((item, i) => [(pageIndex * 14) + i + 1, item.asset, item.count])}
+                                headers={['Ranking', 'Nombre del Activo', 'Vulnerabilidades']}
+                                data={chunk.map((item, i) => [(pageIndex * 18) + i + 1, item.asset, item.count])}
                                 colorClass="text-red-700 font-medium"
                             />
                         </div>
@@ -251,11 +248,24 @@ export default function ReportPage() {
                 @media print {
                     @page {
                         margin: 0;
-                        size: A4;
+                        size: A4 portrait;
                     }
                     body {
-                        background: white;
-                        -webkit-print-color-adjust: exact;
+                        margin: 0;
+                        padding: 0;
+                        background: white !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    .print-page {
+                        width: 210mm !important;
+                        height: 297mm !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        page-break-after: always !important;
+                        break-after: page !important;
+                        position: relative !important;
+                        overflow: hidden !important;
                     }
                 }
             `}</style>
@@ -267,15 +277,15 @@ export default function ReportPage() {
 
 const ReportPageLayout = ({ children, letterhead }: { children: React.ReactNode, letterhead: string | null }) => (
     <div
-        className="bg-white shadow-xl print:shadow-none w-[210mm] h-[297mm] relative mb-8 last:mb-0 print:mb-0 print:break-after-page overflow-hidden"
+        className="bg-white shadow-xl print:shadow-none w-[210mm] h-[297mm] relative mb-8 last:mb-0 print:mb-0 print-page overflow-hidden"
     >
         {/* Letterhead Background */}
         {letterhead && (
-            <div className="absolute inset-0 z-0 pointer-events-none print:fixed print:inset-0">
+            <div className="absolute inset-0 z-0 pointer-events-none">
                 <img
                     src={letterhead}
                     alt="Letterhead"
-                    className="w-[210mm] h-[297mm] object-fill opacity-100"
+                    className="w-[210mm] h-[297mm] object-fill opacity-100 block"
                 />
             </div>
         )}
