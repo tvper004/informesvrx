@@ -38,6 +38,7 @@ Este archivo sirve como puente de conocimiento para cualquier modelo de IA o age
 
 | Fecha | Agente | Descripción del Cambio |
 | :--- | :--- | :--- |
+| 2026-02-16 | Antigravity | Implementación de Versión Demo: Se añadió el botón "Usar Versión Demo" y lógica de datos estáticos para visualización rápida sin carga de archivos. |
 | 2026-02-10 | Antigravity | Optimización de Espacio en Reporte: Integración de métricas de licencia en texto descriptivo y compactación de gráficos en la Hoja 2 para incluir S.O. sin desbordamiento. |
 | 2026-02-10 | Antigravity | Optimización de Leyendas: Se unificaron las leyendas en Dashboard y Reporte para mostrar "Nombre (Valor)", evitando redundancias y mejorando la legibilidad en PDF. |
 | 2026-02-10 | Antigravity | Rediseño de Reporte PDF: Título actualizado, adición de línea de estilo, desglose de severidad detectada/mitigada y métricas de licencias (consumidas/libres). |

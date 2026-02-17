@@ -3,11 +3,11 @@
 import { useDashboard } from '@/lib/context';
 import { FileUpload } from '@/components/FileUpload';
 import { ExecutiveSummary } from '@/components/ExecutiveSummary';
-import { ShieldCheck, LogOut, FileText } from 'lucide-react';
+import { ShieldCheck, LogOut, FileText, Activity } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
-  const { data, resetData } = useDashboard();
+  const { data, resetData, loadDemoData } = useDashboard();
   const hasData = data.endpoints.length > 0 || data.vulnerabilities.length > 0;
 
   return (
@@ -58,7 +58,23 @@ export default function Home() {
                 Arrastre y suelte sus archivos CSV exportados para generar un informe de seguridad interactivo.
               </p>
             </div>
-            <FileUpload />
+            <div className="flex flex-col items-center gap-4 w-full max-w-md">
+              <button
+                onClick={loadDemoData}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-slate-50 text-indigo-600 border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-xl font-semibold transition-all hover:shadow-md active:scale-95 group"
+              >
+                <Activity className="w-5 h-5 group-hover:animate-pulse" />
+                Usar Versión Demo
+              </button>
+
+              <div className="flex items-center gap-4 w-full">
+                <div className="h-px bg-slate-200 flex-1"></div>
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">O</span>
+                <div className="h-px bg-slate-200 flex-1"></div>
+              </div>
+
+              <FileUpload />
+            </div>
           </div>
         ) : (
           <div className="animate-in fade-in duration-500">

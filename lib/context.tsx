@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { DashboardData, Endpoint, VulnerabilityIncident, Mitigation, EndpointTask, EndpointGroup } from './types';
 import { parseCSV, identifyFileType, FileType } from './csvUtils';
+import { demoData } from './demoData';
 
 interface DashboardContextType {
     data: DashboardData;
@@ -15,6 +16,7 @@ interface DashboardContextType {
     totalLicenses: number;
     setTotalLicenses: (count: number) => void;
     loadFiles: (files: File[]) => Promise<void>;
+    loadDemoData: () => void;
     resetData: () => void;
 }
 
@@ -98,6 +100,11 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const loadDemoData = () => {
+        setData(demoData);
+        setError(null);
+    };
+
     const resetData = () => {
         setData(initialData);
         setError(null);
@@ -114,6 +121,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             dateRange,
             setDateRange,
             loadFiles,
+            loadDemoData,
             resetData,
             totalLicenses,
             setTotalLicenses
