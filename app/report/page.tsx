@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useState } from 'react';
 import { useDashboard } from '@/lib/context';
 import {
     calculateKPIs,
@@ -12,12 +12,13 @@ import {
     getSeverityDistribution
 } from '@/lib/analytics';
 import { MonthlyTrendsChart, DistributionChart, DistributionLegend } from '@/components/Charts';
-import { Printer, Upload, ArrowLeft, Trash2, Calendar, FileText, Monitor, TrendingUp, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Printer, Upload, ArrowLeft, Trash2, Calendar, FileText, Monitor, TrendingUp, CheckCircle, AlertTriangle, ChevronDown, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { DateRangePicker } from '@/components/DateRangePicker';
 
 export default function ReportPage() {
     const { data, letterhead, setLetterhead, dateRange, setDateRange, totalLicenses } = useDashboard();
+    const [showLetterheadMenu, setShowLetterheadMenu] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Analytics Calculation (Scoped to Report Range)
@@ -87,7 +88,7 @@ export default function ReportPage() {
 
                     <div className="h-6 w-px bg-slate-200 mx-2"></div>
 
-                    <div className="hidden sm:flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2 relative">
                         <input
                             type="file"
                             accept="image/*"
@@ -95,13 +96,62 @@ export default function ReportPage() {
                             ref={fileInputRef}
                             onChange={handleLetterheadUpload}
                         />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200"
-                        >
-                            <Upload className="w-4 h-4" />
-                            {letterhead ? 'Cambiar Membrete' : 'Subir Membrete'}
-                        </button>
+
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowLetterheadMenu(!showLetterheadMenu)}
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200"
+                            >
+                                <ImageIcon className="w-4 h-4" />
+                                {letterhead ? 'Cambiar Membrete' : 'Seleccionar Membrete'}
+                                <ChevronDown className={showLetterheadMenu ? "w-4 h-4 rotate-180 transition-transform" : "w-4 h-4 transition-transform"} />
+                            </button>
+
+                            {showLetterheadMenu && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-10"
+                                        onClick={() => setShowLetterheadMenu(false)}
+                                    ></div>
+                                    <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                        <div className="p-1">
+                                            <button
+                                                onClick={() => {
+                                                    setLetterhead('/MembreteDemo.png');
+                                                    setShowLetterheadMenu(false);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors text-left"
+                                            >
+                                                <div className="w-8 h-8 rounded border border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden">
+                                                    <img src="/MembreteDemo.png" alt="" className="w-full h-full object-cover" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold">Demo Unicon</span>
+                                                    <span className="text-[10px] opacity-70">Membrete corporativo</span>
+                                                </div>
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    fileInputRef.current?.click();
+                                                    setShowLetterheadMenu(false);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors text-left"
+                                            >
+                                                <div className="w-8 h-8 rounded border border-slate-100 bg-slate-50 flex items-center justify-center">
+                                                    <Upload className="w-4 h-4" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold">Subir desde PC</span>
+                                                    <span className="text-[10px] opacity-70">JPG o PNG personalizado</span>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
                         {letterhead && (
                             <button
                                 onClick={() => setLetterhead(null)}
